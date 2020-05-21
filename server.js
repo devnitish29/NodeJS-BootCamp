@@ -5,6 +5,9 @@ const colors = require("colors");
 const mongoSanitize = require("express-mongo-sanitize");
 const helmet = require("helmet");
 const xss = require("xss-clean");
+const rateLimit = require("express-rate-limit");
+const hpp = require("hpp");
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const errorHandler = require("./middleware/error");
 const connectDB = require("./config/db");
@@ -37,13 +40,27 @@ if (process.env.NODE_ENV === "development") {
 }
 
 //Sanitize data
-app.use(mongoSanitize);
+app.use(mongoSanitize());
 
 //Set security headers
-app.use(helmet);
+app.use(helmet());
 
 // Prevent Xss attacks
 app.use(xss());
+
+// //Rate limiting
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, //10 mins
+  max: 100,
+});
+
+app.use(limiter);
+
+//Prevent http param pollution
+app.use(hpp());
+
+//Enable Cors
+app.use(cors());
 //Mount routers
 app.use("/api/v1/bootcamps", bootcamps);
 app.use("/api/v1/courses", courses);
